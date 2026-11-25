@@ -8,7 +8,7 @@ Research toward custom firmware for the original GameSir G8 Plus Bluetooth contr
 |---|---|
 | Wired modes on a Mac | Measured for all three modes; table below |
 | Bluetooth modes | DualShock 4 mode measured; Android mode inspected but macOS creates no controller for it; Switch mode could not be paired: in red pairing mode (firmware 2.12) neither this Mac nor an iPhone found it in classic or LE scans |
-| Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit runs firmware 2.12 (reported over Bluetooth as "02.0C") |
+| Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit ran 2.12 and now runs official 2.20 (confirmed over Bluetooth) |
 | Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (53 seconds over Bluetooth LE). No modified firmware yet |
 
 ## Wired modes as Apple's GameController framework sees them
@@ -53,7 +53,7 @@ Read with `tools/ble-inspect.swift` (read-only; built as an app by `tools/build-
 |---|---|
 | Name | GameSir-G8+ |
 | Transport | Bluetooth LE, advertises the HID service |
-| Firmware revision | 02.0C (2.12) |
+| Firmware revision | 02.0C (2.12) before the update; 02.14 (2.20) after it. The digits after the dot are hexadecimal |
 | PnP ID | USB vendor 3537, product 1108, version 07db |
 | Services | Device Information; HID (hidden by macOS); FF10 with FF11 and FF12, which the community patcher uses for firmware updates; 8650 with 865F and 8655, purpose unknown |
 
