@@ -6,7 +6,7 @@ Research toward custom firmware for the original GameSir G8 Plus Bluetooth contr
 
 | Area | State |
 |---|---|
-| Wired modes on a Mac | Measured for all three modes. With a 4-byte patch, the wired Xbox mode works as an Xbox controller on the Mac |
+| Wired modes on a Mac | Measured for all three modes. With a 4-byte patch, the wired Xbox mode works as an Xbox controller on Mac and iPhone |
 | Bluetooth modes | DualShock 4 mode measured; Android mode inspected but macOS creates no controller for it; Switch mode could not be paired: in red pairing mode (firmware 2.12) neither this Mac nor an iPhone found it in classic or LE scans |
 | Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit ran 2.12 and now runs official 2.20 (confirmed over Bluetooth) |
 | Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (53 seconds over Bluetooth LE), then 2.20 with `patches/usb-xbox360-id.txt` |
@@ -44,9 +44,13 @@ Xbox mode uses the Xbox 360 wired protocol. Apple's framework supports Xbox One 
 | Rumble | Offered by the framework; not yet felt |
 | Gyro | No (the Xbox profile has none) |
 | Reports per second | 500 (every 2 ms) |
-| Button check (`tools/input-check.swift`) | Face buttons, bumpers, triggers, Menu, View, stick clicks and D-pad all arrive under the right names. Home press not seen by the test app |
+| Button check (`tools/input-check.swift`) | Face buttons, bumpers, triggers, Menu, View, stick clicks and D-pad all arrive under the right names. Home opens the Games app |
 
-Not yet checked: iPhone, rumble felt in hand, the Home button, Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
+On an iPhone (iOS 27) over USB-C it shows as an Xbox controller and works in games.
+
+The Home button reaches the system: on macOS 27 it opens the Games app by default, which is why the test app did not see it. Apps can take it over through `GCControllerHomeButtonSettingsManager` (macOS 27, iOS 27), and macOS 27 adds a setting that turns the system action off.
+
+Not yet checked: rumble felt in hand in this mode, Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
 
 ## Bluetooth, DualShock 4 mode (blue)
 
