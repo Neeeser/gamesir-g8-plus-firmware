@@ -9,7 +9,7 @@ Research toward custom firmware for the original GameSir G8 Plus Bluetooth contr
 | Wired modes on a Mac | Measured for all three modes; table below |
 | Bluetooth modes | DualShock 4 mode measured; Android mode inspected but macOS creates no controller for it; Switch mode could not be paired: in red pairing mode (firmware 2.12) neither this Mac nor an iPhone found it in classic or LE scans |
 | Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit runs firmware 2.12 (reported over Bluetooth as "02.0C") |
-| Changes to the controller | None. Nothing has been flashed or written |
+| Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (53 seconds over Bluetooth LE). No modified firmware yet |
 
 ## Wired modes as Apple's GameController framework sees them
 
@@ -47,7 +47,7 @@ Not yet known: whether the 15 ms comes from the controller's firmware or from th
 
 ## Bluetooth, Android mode (yellow)
 
-Read with `tools/ble-inspect.swift` (read-only; built as an app by `tools/build-ble-inspect.sh` because macOS grants Bluetooth only to app bundles).
+Read with `tools/ble-inspect.swift` (read-only; built as an app by `tools/build-bt-app.sh` because macOS grants Bluetooth only to app bundles).
 
 | Item | Value |
 |---|---|
@@ -63,6 +63,8 @@ The tools run on macOS with the Xcode command line tools. Bluetooth pairing uses
 
 
 - `tools/controller-probe.swift` prints how Apple's GameController framework classifies each connected controller, the glyph each button gets, and raw HID input reports per second: `swift tools/controller-probe.swift [seconds]`
+- `tools/flash.sh <ota.bin>` checks a G8 Plus Bluetooth image's structure and checksums, then flashes it over Bluetooth LE from the Mac with `tools/g8-flash.swift` (the controller's own update protocol, ported from jun182/controller-mod-tool). Put the controller in Android mode (pairing button + A, yellow light) first. `tools/flash.sh --dry-run` connects and checks the update service without sending anything.
+- `tools/build-bt-app.sh` and `tools/run-app.sh` build and run the Bluetooth tools as small apps, since macOS grants Bluetooth only to app bundles.
 - `tools/ble-inspect.swift` lists a Bluetooth LE device's advertisement, services and readable values, without writing anything.
 - `tools/ds4-extended-check.swift` reads DualShock 4 feature report 0x02 and shows whether the controller switches to full reports with motion.
 - `tools/ds4-bt-interval-test.swift` requests DualShock 4 Bluetooth report intervals and measures the gaps between reports. The request lasts only for the current connection.

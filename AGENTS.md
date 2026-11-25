@@ -18,7 +18,7 @@ Research and patch tooling for the original GameSir G8 Plus Bluetooth controller
 
 - GameSir's firmware is GameSir's copyright. Scripts download it from GameSir's update server and patch it locally; the images and patched builds never go into Git.
 - Captures contain controller serial numbers and the host's registry, so they stay in `captures/`.
-- macOS denies Bluetooth to command-line tools started from an agent session. Bluetooth tools run inside small app bundles built by `tools/build-*-app.sh` or `tools/build-ble-inspect.sh`.
+- macOS denies Bluetooth to command-line tools started from an agent session. Bluetooth tools run inside small app bundles built by `tools/build-bt-app.sh` and started with `tools/run-app.sh`.
 - Separate measured results from guesses in the README and research notes, and say which Mac, iOS and firmware version a result came from.
 - Read the source of community tools before running them, since some talk to the controller's update service.
 - Flashing changes the controller. Each flash needs a known way back: the original GameSir image for this firmware version and a tested reflash path.
