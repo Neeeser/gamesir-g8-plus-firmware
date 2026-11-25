@@ -1,0 +1,6 @@
+# Wired Xbox mode (green): announce Microsoft's Xbox 360 controller ID instead of GameSir's.
+# Apple's XboxGamepad driver (macOS 27, and the wired Xbox support iOS added in 18) binds the
+# Xbox 360 wired protocol (interface FF/5D/01) only for 045e:028e. Stock 2.20 announces 3537:1014.
+# Decrypted file offset of the idVendor/idProduct fields in the green-mode USB device descriptor
+# (descriptor starts at 0x234f3). Stock bytes: 37 35 14 10.
+234fb:5e048e02
