@@ -52,6 +52,10 @@ The Home button reaches the system: on macOS 27 it opens the Games app by defaul
 
 Not yet checked: Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
 
+## Bluetooth Xbox mode (in progress)
+
+Firmware 2.20 contains a complete classic-Bluetooth Xbox One S identity (Bluetooth gamepad type 7: name "Xbox Wireless Controller", Device ID 045e:02e0, Xbox HID record and report builder) that no button combo selects. `patches/bt-xbox-one-s.txt` points pairing + Y at it. On hardware the controller then blinks red, is not discoverable to a Mac or iPhone, and powers off after about a minute, the same as stock Switch mode, which shares its Bluetooth start-up path.
+
 ## Bluetooth, DualShock 4 mode (blue)
 
 Measured on macOS with `tools/controller-probe.swift`, `tools/ds4-extended-check.swift` and `tools/ds4-bt-interval-test.swift`.

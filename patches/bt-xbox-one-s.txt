@@ -1,0 +1,13 @@
+# STATUS: not working yet. With this patch, pairing + Y blinks red, is not discoverable to a Mac or
+# iPhone, and powers off after about a minute, the same as stock Switch mode.
+
+# Bluetooth: pairing button + Y (stock: Switch, red) starts the firmware's built-in classic-Bluetooth
+# Xbox One S identity instead (Bluetooth gamepad type 7: name "Xbox Wireless Controller", SDP Device ID
+# 045e:02e0, Xbox HID record, Xbox report builder at 0x1E1150C). No stock combo selects type 7.
+# Power-on combo block at 0x1E14D14: the Y combo stores type 3 at 0x1E14DA4, then reads the
+# "saved pairing" flag b[0x6B00 + 1169 + type] at 0x1E14DA8. Both follow the new type, so a saved
+# Switch pairing cannot send this combo into reconnect mode.
+# 0x1E14DA2 r1 = 3 -> 7
+14da2:4127
+# 0x1E14DA8 r1 = 1172 -> 1176
+14daa:9804

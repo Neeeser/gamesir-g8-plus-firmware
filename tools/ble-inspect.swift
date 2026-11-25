@@ -41,7 +41,15 @@ final class Inspector: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate 
         let name = (ad[CBAdvertisementDataLocalNameKey] as? String) ?? p.name ?? ""
         // "*" lists every advertiser once instead of connecting to one.
         if match == "*" {
-            if listed.insert(p.identifier).inserted { print("  \(name.isEmpty ? "(no name)" : name) RSSI \(rssi) services \(ad[CBAdvertisementDataServiceUUIDsKey] ?? "-")") }
+            if listed.insert(p.identifier).inserted {
+                print("  \(name.isEmpty ? "(no name)" : name) RSSI \(rssi) id \(p.identifier.uuidString.prefix(8))")
+                // Nearby devices get their full advertisement, to spot unnamed ones.
+                if rssi.intValue > -50 {
+                    for (k, v) in ad.sorted(by: { $0.key < $1.key }) where k != CBAdvertisementDataTimestampKey {
+                        if let d = v as? Data { print("      \(k): \(hex(d))") } else { print("      \(k): \("\(v)".replacingOccurrences(of: "\n", with: " "))") }
+                    }
+                }
+            }
             return
         }
         guard name.localizedCaseInsensitiveContains(match), target == nil else { return }
