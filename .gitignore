@@ -1,0 +1,10 @@
+# Raw USB and Bluetooth captures include device serial numbers and host registry dumps
+captures/
+# Built helper apps
+work/
+# GameSir firmware images (downloaded from GameSir; not ours to redistribute) and anything derived from them
+firmware/
+# Third-party source checkouts and copied files
+third_party/
+research/src/
+.DS_Store
