@@ -8,6 +8,7 @@ Research and patch tooling for the original GameSir G8 Plus Bluetooth controller
 |---|---|
 | `README.md` | What works, measured results, how to run the tools |
 | `tools/` | Measurement, Bluetooth and firmware scripts |
+| `patches/` | Firmware edits in `<hex file offset>:<hex bytes>` lines against the decrypted official image, built with `third_party/controller-mod-tool/g8fw.py build` |
 | `research/` | Notes on community projects, protocols and Apple's controller support, with sources |
 | `firmware/` | Downloaded GameSir images and anything built from them. Ignored by Git |
 | `captures/` | Raw USB and Bluetooth captures. Ignored by Git |
