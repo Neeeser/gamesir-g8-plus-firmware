@@ -41,7 +41,7 @@ Xbox mode uses the Xbox 360 wired protocol. Apple's framework supports Xbox One 
 | Apple framework category | Xbox One |
 | Glyphs | A/B/X/Y, LB/RB, LT/RT, Menu, View, Xbox button |
 | Analog triggers | Yes, 0 to 1.00 measured on both |
-| Rumble | Offered by the framework; not yet felt |
+| Rumble | Yes: left, right and both sides felt with `tools/rumble-check.swift` |
 | Gyro | No (the Xbox profile has none) |
 | Reports per second | 500 (every 2 ms) |
 | Button check (`tools/input-check.swift`) | Face buttons, bumpers, triggers, Menu, View, stick clicks and D-pad all arrive under the right names. Home opens the Games app |
@@ -50,7 +50,7 @@ On an iPhone (iOS 27) over USB-C it shows as an Xbox controller and works in gam
 
 The Home button reaches the system: on macOS 27 it opens the Games app by default, which is why the test app did not see it. Apps can take it over through `GCControllerHomeButtonSettingsManager` (macOS 27, iOS 27), and macOS 27 adds a setting that turns the system action off.
 
-Not yet checked: rumble felt in hand in this mode, Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
+Not yet checked: Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
 
 ## Bluetooth, DualShock 4 mode (blue)
 
