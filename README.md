@@ -73,7 +73,7 @@ Each Bluetooth mode has its own address, so a host keeps a separate pairing for 
 
 Pair it from the host's Bluetooth settings. Pairing with `blueutil --pair` makes macOS drop the link just as the controller opens its input channel, and the controller then turns itself off.
 
-Known gaps: not yet checked on iPhone, and no gyro, since the Xbox profile has none.
+On an iPhone (iOS 27) it pairs from Bluetooth settings and shows as an Xbox controller. Not yet tried in a game there. No gyro: the Xbox profile has none.
 
 ## Bluetooth, DualShock 4 mode (blue)
 
