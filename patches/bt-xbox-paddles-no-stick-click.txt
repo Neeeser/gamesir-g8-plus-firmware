@@ -1,0 +1,20 @@
+# Bluetooth Xbox mode (gamepad type 4): while a rear paddle is pressed, drop the stick click it would also send,
+# so the paddles work without unmapping them in the GameSir app. Use with bt-xbox-elite-paddles.txt (needs its
+# 40-byte report and its hook at 0x1E1171E). NOT tested on hardware.
+#
+# Why: stock firmware turns a paddle press into a stick click through a RAM mapping the GameSir app edits
+# (left paddle -> left stick click, right paddle -> right stick click, measured). The raw paddle bits
+# b[0x6B00+599] bit 6 (left) and bit 7 (right) are not in the remap table, so they stay set. This patch removes
+# only the copy, in the finished report.
+#
+# Hook: the builder's common exit at 0x1E11722 (`sp += 8`, pop) becomes a jump to new code at 0x1E21A90.
+# The code sits in the same zero-filled table as bt-xbox-elite-paddles.txt's code (file 0x21A1C..0x21E03). The
+# table's only reader, 0x1E5270C, reads bytes 12..15 of each 100-byte record (file 0x21A28, 0x21A8C, 0x21AF0, ...);
+# this code uses file 0x21A90..0x21AC3, between two of those.
+# Code: if the report length byte b[0x6B00+22] is 40 (the Elite report), clear report byte 15 (counting the
+# report ID as byte 0; b[0x6B00+7821]) bit 0 (left stick click) where the left paddle is down and bit 1 (right
+# stick click) where the right paddle is down. Then r0 is restored and the original exit instructions run.
+# Side effect: a real stick click is also dropped while the same-side paddle is held.
+# Built by work/paddles/cave2.py with CAVE = 0x21A90.
+11722:c0eab581
+21a90:031650ee260180f8125041e05702d8ee2011b0e10413b1e1841311a1101941e08d1ed8ee204190e14340d8ee2141301602825804

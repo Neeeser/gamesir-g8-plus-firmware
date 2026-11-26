@@ -83,7 +83,8 @@ These are built and checked by disassembling every changed instruction, but not 
 |---|---|---|
 | `patches/stick-smoothing-off.txt` | Turns off the two stick filters (the first is shared by every mode and comes from jun182/controller-mod-tool; the second is the Xbox report builder's own copy) | Sticks follow slow moves without the filters' delay, estimated at 20 to 30 ms each. Buttons and the report rate do not change. Risk: stick jitter at rest |
 | `patches/idle-power-off-52min.txt` | Connected-idle power-off limit from 13375 to 65536 counts of about 48 ms | Turns off after about 52 minutes idle instead of about 10 min 42 s (worked out from the code, not timed) |
-| `patches/bt-xbox-elite-paddles.txt` | Bluetooth Xbox mode claims the Xbox Elite Series 2 (045e:0b05) and sends its 39-byte report with the paddle byte filled from the raw paddle state | The rear paddles appear as paddle buttons 1 and 2 in Apple's framework. Both paddles must be unmapped ("null") in the GameSir app, or they also press the stick clicks |
+| `patches/bt-xbox-elite-paddles.txt` | Bluetooth Xbox mode claims the Xbox Elite Series 2 (045e:0b05) and sends its 39-byte report with the paddle byte filled from the raw paddle state | The rear paddles appear as paddle buttons 1 and 2 in Apple's framework |
+| `patches/bt-xbox-paddles-no-stick-click.txt` | Used with the paddle patch: while a paddle is held, clears the stick click the stock mapping copies it to | The paddles work without unmapping them in the GameSir app. A real stick click on the same side is also dropped while that paddle is held |
 
 The Bluetooth input rate itself is set by the Mac: macOS puts game controllers on a 15 ms low-power schedule (seen in its Bluetooth log), which is where the 15 ms interval and about 62 reports per second come from.
 
