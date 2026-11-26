@@ -1,10 +1,14 @@
 // Flashes a GameSir G8 Plus (Bluetooth model) over Bluetooth LE with the
 // controller's own update protocol, as used by the GameSir app and ported
 // from jun182/controller-mod-tool (g8ota.py). The controller must be in
-// Android mode (yellow light, name "GameSir-G8+").
+// Android mode (yellow light, name "GameSir-G8+"), or in recovery mode
+// (screenshot + Start for about 1 s, light blue blink, name "GameSir-G8+_G...")
+// with --recovery.
 //
-//   g8-flash --dry-run            connect, find the update service, subscribe, disconnect
-//   g8-flash <ota.bin>            send the image (check it first with tools/flash.sh)
+//   g8-flash [--recovery] --dry-run      connect, find the update service, subscribe, disconnect
+//   g8-flash [--recovery] <ota.bin>      send the image (check it first with tools/flash.sh)
+//
+// Any failure prints a line starting with "FAILED", which tools/run-app.sh turns into exit status 1.
 //
 // Protocol on service FF10: commands go to FF11 as [len+3, cmd, 0, payload...]
 // and answers come back as FF11 notifications; image data goes to FF12.
@@ -15,18 +19,26 @@
 import CoreBluetooth
 import Foundation
 
-let args = Array(CommandLine.arguments.dropFirst())
+let allArgs = Array(CommandLine.arguments.dropFirst())
+let recovery = allArgs.contains("--recovery")
+let args = allArgs.filter { $0 != "--recovery" }
 let dryRun = args.first == "--dry-run"
 let image: Data
 if dryRun {
     image = Data()
 } else {
     guard let path = args.first, let d = FileManager.default.contents(atPath: path), !d.isEmpty, d.count <= 0xFFFFFF else {
-        print("usage: g8-flash --dry-run | g8-flash <ota.bin>"); exit(64)
+        print("usage: g8-flash [--recovery] --dry-run | g8-flash [--recovery] <ota.bin>"); exit(64)
     }
     image = d
 }
 let deviceName = "GameSir-G8+"
+// Android mode advertises exactly "GameSir-G8+"; recovery (G-Touch) mode adds a suffix starting with "_G".
+func isTarget(_ name: String?) -> Bool {
+    guard let name else { return false }
+    return recovery ? name.hasPrefix(deviceName + "_G") : name == deviceName
+}
+let modeHint = recovery ? "recovery mode, light blue blink" : "Android mode, yellow light"
 let writeSlice = 20
 let responseTimeout = 3.0
 let maxSameBlock = 5
@@ -50,7 +62,7 @@ final class Flasher: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var expected: UInt8 = 0
     var deadline: Date?
     var blockSize = 0
-    var index = 0, lastIndex = -1, same = 0
+    var offset = 0, lastOffset = -1, same = 0   // byte offset of the block being sent
     var pending: [Data] = []           // 20-byte pieces of the current block not yet written
     let started = Date()
     var lastPercent = -1
@@ -59,7 +71,7 @@ final class Flasher: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
 
     func fail(_ msg: String) -> Never {
         log("FAILED: \(msg)")
-        log("The controller keeps its current firmware if a transfer stops before the finish command (JieLi dual-bank update, inferred). If it does not boot, hold screenshot + Start for about 1 s for G-Touch mode and reflash.")
+        log("The controller keeps its current firmware if a transfer stops before the finish command (JieLi dual-bank update, inferred). If it does not boot normally, hold screenshot + Start for about 1 s for recovery mode and reflash with --recovery (untested from this Mac).")
         if let p = peripheral { central.cancelPeripheralConnection(p) }
         exit(1)
     }
@@ -68,20 +80,26 @@ final class Flasher: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         guard c.state == .poweredOn else { log("Bluetooth state \(c.state.rawValue)"); return }
         // A bonded controller may already be connected to this Mac and then does not advertise.
         let known = c.retrieveConnectedPeripherals(withServices: [CBUUID(string: "FF10"), CBUUID(string: "1812"), CBUUID(string: "180A")])
-        if let p = known.first(where: { $0.name == deviceName }) { log("Using connected \(deviceName)"); connect(p); return }
-        log("Scanning for \(deviceName) (Android mode, yellow light)...")
+        if let p = known.first(where: { isTarget($0.name) }) { log("Using connected \(p.name ?? deviceName)"); connect(p); return }
+        log("Scanning for \(deviceName) (\(modeHint))...")
         c.scanForPeripherals(withServices: nil)
     }
     func centralManager(_ c: CBCentralManager, didDiscover p: CBPeripheral, advertisementData ad: [String: Any], rssi: NSNumber) {
         let name = (ad[CBAdvertisementDataLocalNameKey] as? String) ?? p.name
-        guard name == deviceName, peripheral == nil else { return }
-        log("Found \(deviceName), signal \(rssi) dBm"); c.stopScan(); connect(p)
+        guard isTarget(name), peripheral == nil else { return }
+        log("Found \(name ?? deviceName) (\(p.identifier.uuidString)), signal \(rssi) dBm"); c.stopScan(); connect(p)
     }
     func connect(_ p: CBPeripheral) { peripheral = p; p.delegate = self; central.connect(p) }
     func centralManager(_ c: CBCentralManager, didConnect p: CBPeripheral) { p.discoverServices([CBUUID(string: "FF10")]) }
     func centralManager(_ c: CBCentralManager, didFailToConnect p: CBPeripheral, error: Error?) { fail("connect: \(error?.localizedDescription ?? "?")") }
     func centralManager(_ c: CBCentralManager, didDisconnectPeripheral p: CBPeripheral, error: Error?) {
-        if expected == 0x53 && error == nil { return }
+        // After the finish command the controller reboots into the new image, and the link can drop before its
+        // answer arrives. That is the expected end of an update, not a failure, but it is not confirmed either.
+        // `deadline` is set only once send(0x53) has written the command.
+        if expected == 0x53 && deadline != nil {
+            log("Finish command sent; the controller dropped the link before answering (it reboots after an update). Done in \(Int(Date().timeIntervalSince(started))) s, not confirmed: check that it starts normally.")
+            exit(0)
+        }
         fail("disconnected: \(error?.localizedDescription ?? "no error given")")
     }
 
@@ -113,11 +131,11 @@ final class Flasher: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         write(control!, frame(cmd, payload))
     }
     func sendBlock() {
-        same = index == lastIndex ? same + 1 : 0
-        if same > maxSameBlock { fail("controller asked for block \(index) more than \(maxSameBlock) times") }
-        lastIndex = index
-        let start = index * blockSize, end = min(start + blockSize, image.count)
-        let piece = image.subdata(in: start..<end)
+        same = offset == lastOffset ? same + 1 : 0
+        if same > maxSameBlock { fail("controller asked for offset \(offset) more than \(maxSameBlock) times") }
+        lastOffset = offset
+        let end = min(offset + blockSize, image.count)
+        let piece = image.subdata(in: offset..<end)
         pending = stride(from: 0, to: piece.count, by: writeSlice).map { piece.subdata(in: $0..<min($0 + writeSlice, piece.count)) }
         expected = 0x52; deadline = nil
         pump()
@@ -145,15 +163,17 @@ final class Flasher: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
             blockSize = Int(b[3]) << 8 | Int(b[4])
             if blockSize == 0 { fail("block size 0") }
             log("Block size \(blockSize), \((image.count + blockSize - 1) / blockSize) blocks")
-            index = 0; sendBlock()
+            offset = 0; sendBlock()
         case 0x52:
             guard b.count >= 8 else { fail("short block answer") }
-            if b[3] != 0 { fail("block \(index) status \(b[3])") }
+            if b[3] != 0 { fail("block at offset \(offset) status \(b[3])") }
             let next = Int(b[4]) << 24 | Int(b[5]) << 16 | Int(b[6]) << 8 | Int(b[7])
+            if next > image.count { fail("controller asked for offset \(next), past the end of the \(image.count)-byte image") }
             let pct = min(100, next * 100 / image.count)
             if pct / 5 != lastPercent / 5 { log("  \(pct)% (\(next) bytes, \(Int(Date().timeIntervalSince(started))) s)"); lastPercent = pct }
-            index = (next + blockSize - 1) / blockSize
-            if index * blockSize >= image.count {
+            // Resume exactly where the controller asks, even mid-block, so no bytes are skipped.
+            offset = next
+            if offset >= image.count {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { self.send(0x53) }
                 expected = 0x53; deadline = nil
             } else { sendBlock() }

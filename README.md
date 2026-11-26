@@ -103,18 +103,19 @@ Read with `tools/ble-inspect.swift` (read-only; built as an app by `tools/build-
 
 ## Tools
 
-The tools run on macOS with the Xcode command line tools. Bluetooth pairing uses `blueutil` from Homebrew.
+The tools run on macOS with the Xcode command line tools. Bluetooth scans use `blueutil` from Homebrew.
 
 
 - `tools/controller-probe.swift` prints how Apple's GameController framework classifies each connected controller, the glyph each button gets, and raw HID input reports per second: `swift tools/controller-probe.swift [seconds]`
-- `tools/flash.sh <ota.bin>` checks a G8 Plus Bluetooth image's structure and checksums, then flashes it over Bluetooth LE from the Mac with `tools/g8-flash.swift` (the controller's own update protocol, ported from jun182/controller-mod-tool). Put the controller in Android mode (Home + A, yellow light) first. `tools/flash.sh --dry-run` connects and checks the update service without sending anything.
+- `tools/flash.sh <ota.bin>` checks a G8 Plus Bluetooth image's structure and checksums, then flashes it over Bluetooth LE from the Mac with `tools/g8-flash.swift` (the controller's own update protocol, ported from jun182/controller-mod-tool). Put the controller in Android mode (Home + A, yellow light) first. `tools/flash.sh --dry-run` connects and checks the update service without sending anything. `--recovery` flashes a controller in recovery mode instead (screenshot + Start for about 1 s, light blue blink); that path is untested from a Mac. The script exits 1 when the check or the flash fails.
 - `tools/build-bt-app.sh` and `tools/run-app.sh` build and run the Bluetooth tools as small apps, since macOS grants Bluetooth only to app bundles.
 - `tools/input-check.swift` prints every button press and the range each trigger and stick reaches, as Apple's framework reports them.
 - `tools/hid-dump.swift <vendor-hex> [seconds]` prints the HID report descriptor and every distinct raw input report, for working out a report layout.
 - `tools/ble-inspect.swift` lists a Bluetooth LE device's advertisement, services and readable values, without writing anything.
 - `tools/ds4-extended-check.swift` reads DualShock 4 feature report 0x02 and shows whether the controller switches to full reports with motion.
 - `tools/ds4-bt-interval-test.swift` requests DualShock 4 Bluetooth report intervals and measures the gaps between reports. The request lasts only for the current connection.
-- `tools/build-blueutil-app.sh`, `tools/bt.sh` and `tools/pair-and-probe.sh` pair a controller with this Mac (macOS allows Bluetooth only to app bundles here, so `blueutil` runs inside one) and save a probe run.
+- `tools/pair-and-probe.sh <name-text> <capture-tag> [seconds] [--fresh]` waits for a controller in pairing mode (fast blink), pairs it with `tools/pair-hold.swift` and saves a probe run. `--fresh` first removes this Mac's old pairing for that address. `blueutil --pair` is not used for pairing: it disconnects right after pairing, and the controller turns itself off when the host ends a connection.
+- `tools/build-blueutil-app.sh` and `tools/bt.sh` run `blueutil` inside an app bundle (macOS allows Bluetooth only to app bundles here), for scans and listing paired devices.
 - `tools/capture-usb-mode.sh` waits for the controller to reappear on USB under a new identity (each mode has its own) and saves its USB registry entry, report descriptors and a probe run to `captures/`. Captures stay out of Git because they contain serial numbers.
 
 ## Research
