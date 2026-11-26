@@ -9,7 +9,7 @@ Research toward custom firmware for the original GameSir G8 Plus Bluetooth contr
 | Wired modes on a Mac | Measured for all three modes. With a 4-byte patch, the wired Xbox mode works as an Xbox controller on Mac and iPhone |
 | Bluetooth modes | DualShock 4 mode measured; Android mode inspected but macOS creates no controller for it; Switch mode could not be paired: in red pairing mode (firmware 2.12) neither this Mac nor an iPhone found it in classic or LE scans |
 | Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit ran 2.12 and now runs official 2.20 (confirmed over Bluetooth) |
-| Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (53 seconds over Bluetooth LE), then 2.20 with `patches/usb-xbox360-id.txt` and the first version of `patches/bt-xbox-type4.txt` |
+| Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (about 55 seconds over Bluetooth LE), then 2.20 with `patches/usb-xbox360-id.txt` and `patches/bt-xbox-type4.txt` |
 
 ## Wired modes as Apple's GameController framework sees them
 
@@ -29,7 +29,7 @@ Measured on macOS with `tools/controller-probe.swift`. iOS uses the same framewo
 
 DualShock 4 mode already gives analog triggers, gyro, rumble and twice the report rate of Switch mode. Its gap for this project is the PlayStation identity and glyphs.
 
-Xbox mode uses the Xbox 360 wired protocol. Apple's framework supports Xbox One and Series controllers, which use a different protocol (GIP, interface subclass 47), so the existing Xbox mode does not work on iPhone.
+Xbox mode uses the Xbox 360 wired protocol. Apple's Xbox driver accepts that protocol only from Microsoft's Xbox 360 controller ID (045e:028e), so with GameSir's own ID the mode is not recognized.
 
 ## Patched wired Xbox mode (green)
 
@@ -52,20 +52,30 @@ The Home button reaches the system: on macOS 27 it opens the Games app by defaul
 
 Not yet checked: Windows (where the ID change makes Windows use its own Xbox 360 driver instead of GameSir's).
 
-## Bluetooth Xbox mode (in progress)
+## Bluetooth Xbox mode
 
-Firmware 2.20 contains two classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` points pairing + Y (stock: Switch) at type 4, which runs the same Bluetooth start-up as the DualShock 4 mode and pairs with a Mac. Measured on macOS 27.2 with the patch's first version (product ID 02fd, no light color):
+Firmware 2.20 contains classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` points Home + Y (stock: Switch) at type 4, makes it claim the product ID that matches the reports it sends (045e:02e0), gives it a light color, and gives it the same connect timeout as the DualShock 4 mode. Measured on macOS 27.2 with firmware 2.20 plus both patches:
 
 | Item | Result |
 |---|---|
-| Apple framework category | Xbox One, Xbox glyphs, analog triggers, trigger rumble offered |
-| Raw reports | 16 bytes, report 0x01, about 62 per second (every 16 ms). Sticks reach 0 to 65535, triggers 0 to 1023 |
-| Menu and View | Wrong: the report builder sends the original Xbox One S layout (product 02e0), but the mode claimed 02fd, whose button numbering differs |
-| Light | Off while connected |
+| Identity | Microsoft 045e:02e0 over classic Bluetooth |
+| Apple framework category | Xbox One |
+| Glyphs | A/B/X/Y, LB/RB, LT/RT, Menu, View, Xbox button |
+| Button check (`tools/input-check.swift`) | Face buttons, bumpers, Menu, View, stick clicks and D-pad arrive under the right names. The rear paddles arrive as the stick clicks |
+| Analog triggers | Yes, 0 to 1.00 on both |
+| Sticks | Full range on both axes |
+| Reports per second | About 63 (16-byte report 0x01) |
+| Connection | Stayed connected; checked again after 60 seconds |
 
-The current patch claims 02e0 in both places the firmware stores the ID and gives the mode the DualShock 4 light color. It is built but not yet on the controller: the first flash attempt lost its Bluetooth link before the finish command, and the controller kept its previous firmware (inferred from the JieLi dual-bank update; not yet confirmed by booting it).
+To start it, turn the controller on and press Home + Y. A fast blue blink means it is waiting to pair; a slow blink means it is reconnecting to the last host it paired with.
 
-Still to do: confirm Menu and View, test on iPhone, give the mode its own Bluetooth address (it shares the DualShock 4 mode's, so pairing one replaces the other on the host) and its own light color.
+Pair it from the host's Bluetooth settings. Pairing with `blueutil --pair` makes macOS drop the link just as the controller opens its input channel, and the controller then turns itself off.
+
+Known gaps:
+
+- The mode shares the DualShock 4 mode's Bluetooth address, so a host keeps one pairing for both modes and shows the name it saw first. Pairing one mode replaces the other.
+- The light is the DualShock 4 mode's blue.
+- Not yet checked on iPhone. No gyro: the Xbox profile has none.
 
 ## Bluetooth, DualShock 4 mode (blue)
 
@@ -99,7 +109,7 @@ The tools run on macOS with the Xcode command line tools. Bluetooth pairing uses
 
 
 - `tools/controller-probe.swift` prints how Apple's GameController framework classifies each connected controller, the glyph each button gets, and raw HID input reports per second: `swift tools/controller-probe.swift [seconds]`
-- `tools/flash.sh <ota.bin>` checks a G8 Plus Bluetooth image's structure and checksums, then flashes it over Bluetooth LE from the Mac with `tools/g8-flash.swift` (the controller's own update protocol, ported from jun182/controller-mod-tool). Put the controller in Android mode (pairing button + A, yellow light) first. `tools/flash.sh --dry-run` connects and checks the update service without sending anything.
+- `tools/flash.sh <ota.bin>` checks a G8 Plus Bluetooth image's structure and checksums, then flashes it over Bluetooth LE from the Mac with `tools/g8-flash.swift` (the controller's own update protocol, ported from jun182/controller-mod-tool). Put the controller in Android mode (Home + A, yellow light) first. `tools/flash.sh --dry-run` connects and checks the update service without sending anything.
 - `tools/build-bt-app.sh` and `tools/run-app.sh` build and run the Bluetooth tools as small apps, since macOS grants Bluetooth only to app bundles.
 - `tools/input-check.swift` prints every button press and the range each trigger and stick reaches, as Apple's framework reports them.
 - `tools/hid-dump.swift <vendor-hex> [seconds]` prints the HID report descriptor and every distinct raw input report, for working out a report layout.

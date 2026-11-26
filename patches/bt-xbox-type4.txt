@@ -1,10 +1,17 @@
-# Bluetooth: pairing button + Y (stock: Switch, red) starts the firmware's built-in classic-Bluetooth
+# Bluetooth: Home + Y (stock: Switch, red) starts the firmware's built-in classic-Bluetooth
 # Xbox One S identity (Bluetooth gamepad type 4). Type 4 runs the same Bluetooth start-up as the
-# DualShock 4 mode (type 1), so it is discoverable and pairs with iPhone and Mac.
+# DualShock 4 mode (type 1), so it is discoverable and pairs with a Mac.
 #
-# Running-state combo handler 0x1E14208: Y + pairing button calls 0x1E001F0(type). Stock passes 3.
-# 0x1E1421A r0 = 3 -> 4
-1421a:4124
+# Running-state combo handler 0x1E14208: Y + Home (b[0x6B00+597] & 0x30) calls 0x1E001F0(type). Stock passes 3.
+# 0x1E1421A r0 = 3 -> 4 (encoding: first byte 0x40 + register, second byte 0x20 + value)
+1421a:4024
+# Power-on combo block 0x1E14D14: a long Home + Y hold reaches this block. Without these two edits it
+# still starts Switch (red blink), measured with a build that had only the edit above.
+# 0x1E14DA2 r1 = 3 -> 4
+14da2:4124
+# 0x1E14DA8 saved-pairing flag index 1172 (1169 + 3) -> 1173 (1169 + 4), so a saved Switch pairing
+# does not send the combo into reconnect instead of pairing.
+14daa:9504
 # Pairing-blink color table (one byte per type at file 0x12C6A + type - 1): type 4's entry skips the
 # LED call; point it at type 1's case so it blinks.
 12c6d:05
@@ -17,3 +24,9 @@
 2bc9f:e0
 # Device ID in the extended inquiry response (little-endian 0002 045e 02fd 0903): fd 02 -> e0 02
 2703b:e0
+# Report timer (0x1E0DF88): when a host connects, the controller waits type-specific time for reports to
+# start, then resets into reconnect mode. The value is picked by a tbb table at 0x1E0DF9A (one byte per
+# type, target = 0x1E0DF9A + 2 * entry): DualShock 4 (type 1) gets 10000, type 4 gets 3000 (0x1E0DFB4).
+# The timer starts once the HID channel is up. Point type 4 at type 1's case so it gets the same time.
+# Measured drops during pairing came from `blueutil --pair` disconnecting, not from this timer.
+df9d:09
