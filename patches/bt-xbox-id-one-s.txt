@@ -1,0 +1,8 @@
+# Bluetooth Xbox mode (gamepad type 4): claim the Xbox One S product ID, 045e:02e0. Use with bt-xbox-type4.txt.
+# Device ID: type 4 claims Microsoft 045e:02fd, but its report builder (0x1E1150C) sends the original
+# Xbox One S Bluetooth layout (10 buttons: A B X Y LB RB View Menu LS RS, Xbox button in report 2),
+# which is product 02e0. Apple maps buttons by product, so with 02fd, View and Menu arrive as LB/RB bits.
+# SDP Device ID record, ProductID (big-endian): 02 fd -> 02 e0
+2bc9f:e0
+# Device ID in the extended inquiry response (little-endian 0002 045e 02fd 0903): fd 02 -> e0 02
+2703b:e0

@@ -1,0 +1,15 @@
+# Stick smoothing off for Bluetooth Xbox mode (type 4), firmware 2.20.
+# NOT tested on hardware.
+# Offsets are plain-image file offsets (runtime address = offset + 0x1E00000).
+# Both edits follow the community tool (jun182/controller-mod-tool, mods/edits_stick_raw.txt and
+# edits_stick_raw2.txt). The first is reused as is. The second is the same change moved to the Xbox report
+# builder, which has its own copy of the filter (the community file only covers the BLE builder).
+#
+# 1) First filter, shared by every mode, runs in the 8 ms scan function. 0x1E0288A "if (r4 == 0) goto 0x1E0291C"
+#    becomes a NOP, so the (3*y + raw) / 4 averaging is never used. (community edit, unchanged)
+288a:0000
+# 2) Second filter inside the Xbox report builder 0x1E1150C, runs once per report.
+#    0x1E115BA "r6 += r4" (4618) becomes "r6 = r4" (4616), and 0x1E115BC "r6 = r6 >> 1" (e6a1) becomes a NOP.
+#    The stored value and the report byte then equal the first filter's output. The 0/128/255 branches that
+#    follow give the same byte either way.
+115ba:46160000

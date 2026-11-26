@@ -19,13 +19,8 @@
 # type 4's case (0x1E17C3C) sets no color. Point it at the solid-green block 0x1E17D4C (reached from the
 # wired-mode switch in type 1's case), which sets green and joins type 4's own tail at 0x1E17DD0.
 17af0:3101
-# Device ID: type 4 claims Microsoft 045e:02fd, but its report builder (0x1E1150C) sends the original
-# Xbox One S Bluetooth layout (10 buttons: A B X Y LB RB View Menu LS RS, Xbox button in report 2),
-# which is product 02e0. Apple maps buttons by product, so with 02fd, View and Menu arrive as LB/RB bits.
-# SDP Device ID record, ProductID (big-endian): 02 fd -> 02 e0
-2bc9f:e0
-# Device ID in the extended inquiry response (little-endian 0002 045e 02fd 0903): fd 02 -> e0 02
-2703b:e0
+# The product ID this mode claims is in its own file: bt-xbox-id-one-s.txt (Xbox One S) or
+# bt-xbox-elite-paddles.txt (Xbox Elite Series 2, with paddles). Build with exactly one of them.
 # Report timer (0x1E0DF88): when a host connects, the controller waits type-specific time for reports to
 # start, then resets into reconnect mode. The value is picked by a tbb table at 0x1E0DF9A (one byte per
 # type, target = 0x1E0DF9A + 2 * entry): DualShock 4 (type 1) gets 10000, type 4 gets 3000 (0x1E0DFB4).

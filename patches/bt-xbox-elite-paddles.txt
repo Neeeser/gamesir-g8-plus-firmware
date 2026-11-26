@@ -1,0 +1,34 @@
+# Bluetooth Xbox mode (gamepad type 4): report the two rear paddles as Xbox Elite paddles.
+# Use with bt-xbox-type4.txt in place of bt-xbox-id-one-s.txt (both set the product ID). NOT tested on hardware.
+#
+# Why: Apple's Xbox driver (XboxOneHIDServicePlugin) reads paddle bits only for Elite product IDs and only from a
+# 39-byte (or 55-byte) report. Stock type 4 sends a 16-byte report as product 02e0, so paddles never appear.
+#
+# Raw paddle state: b[0x6B00+599] bit 6 = left paddle, bit 7 = right paddle (1 = pressed). Source: the community
+# controller-mod-tool edits_7.1_paddles.txt (jun182) reads exactly these bits in Android mode. The GameSir phone
+# app must set both paddles to "null" first, or the firmware also copies them into stick clicks.
+#
+# 1. Product ID in the SDP Device ID record (big-endian, file 0x2BC9E..0x2BC9F): 02 fd (patch 1: 02 e0) -> 0b 05
+#    (Xbox Elite Series 2, Bluetooth). 0x0B22 is the other Elite id Apple lists for the same code path.
+2bc9e:0b
+2bc9f:05
+# 2. Product ID in the extended inquiry response (little-endian, 0x2703B..0x2703C): fd 02 (patch 1: e0 02) -> 05 0b
+2703b:05
+2703c:0b
+# 3. HID report descriptor of type 4 (SDP record 0x2CE6B, descriptor at 0x2CF41, 306 bytes). The padding item after
+#    the 10 button bits, at 0x2CFE1, is `75 06 95 01 81 03` (6 bits). Widen it to 190 bits (`75 0A 95 13 81 03`,
+#    10 bits x 19) so report 1 is 38 data bytes + the id = 39 bytes. The descriptor length stays 306, so the SDP
+#    length fields do not change.
+2cfe2:0a
+2cfe4:13
+# 4. Report builder 0x1E1150C. It zeroes 16 bytes of the send buffer (0x6B00+7805, `0xA1` header + 15 bytes) before
+#    filling it: `if (r3 != 16)` at 0x1E11532 -> 40 (the changed byte is the last one) so the whole 1 + 39 bytes are zero (the Elite fields stay 0,
+#    including the profile byte at report index 19, which must be 0 for Apple to read the paddles).
+11535:51
+# 5. The builder ends with `r0 = 17; b[r2+22] = r0` (17 = header + 16-byte report; r2 = 0x6B00) at 0x1E1171C.
+#    Replace the store at 0x1E1171E with a jump to new code at 0x1E21A40 (inside a zero-filled 2 x 5 x 100-byte table at file 0x21A1C..0x21E03; its only reader,
+#    0x1E5270C, reads bytes 12..15 of each 100-byte record, and this code uses bytes 36..74 of the first record).
+1171e:c0ea8f81
+# New code: length = 40 (header + 39); r0 = b[599]; paddle byte = (bit 7 << 1) | bit 6; store it at report index 17
+# (0x6B00 + 7806 + 17 = 7823); jump back to the builder's exit at 0x1E11722.
+21a40:482852ee260140e05702d8ee2000b1e10403b0e1840300a1101941e08f1ed8ee2101ffea5e7e

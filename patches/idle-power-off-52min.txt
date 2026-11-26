@@ -1,0 +1,19 @@
+# Connected-idle power-off time: about 10 min 42 s stock -> about 52 min 26 s.
+# NOT tested on hardware.
+#
+# Idle gate in the main loop state machine (0x1E132F0..0x1E16700). Every 6th run of the 8 ms main tick
+# the word [0x6B00+620] is incremented (0x1E166C2..0x1E166CC). When it reaches the limit in r1 the code
+# calls Set_Gamepad_Sleep(12) (0x1E0C01E), which later powers the controller off. Any activity resets it.
+# Stock limit 13375: 13375 * 6 samples * 8 ms = 642 s = 10 min 42 s.
+#
+# 0x1E166C8 (file 0x166C8) r1 = 13375 (41e03f34) -> r1 = 0x10000 (60e0801b)
+# Both are 4-byte instructions, so nothing after them moves. The 60 e0 form encodes a 32-bit constant
+# whose low 15 bits are zero. Other values that fit in the same 4 bytes (all multiples of 32768):
+#   0x08000 = 60e0001c -> 26 min 12 s
+#   0x10000 = 60e0801b -> 52 min 26 s   (this patch)
+#   0x18000 = 60e0c01b -> 78 min 39 s
+#   0x20000 = 60e0001b -> 104 min 52 s
+# Minutes = limit * 48 ms / 60. A 41e0 LLHH immediate reaches only 32767 (about 26 min 12 s),
+# so for any value between 10 min 42 s and 26 min 12 s use 41e0 with LLHH little-endian, for example
+# 20000 = 41e0204e -> 16 min.
+166c8:60e0801b

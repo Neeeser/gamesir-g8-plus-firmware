@@ -9,7 +9,7 @@ Research toward custom firmware for the original GameSir G8 Plus Bluetooth contr
 | Wired modes on a Mac | Measured for all three modes. With a 4-byte patch, the wired Xbox mode works as an Xbox controller on Mac and iPhone |
 | Bluetooth modes | DualShock 4 mode measured; Android mode inspected but macOS creates no controller for it; Switch mode could not be paired: in red pairing mode (firmware 2.12) neither this Mac nor an iPhone found it in classic or LE scans |
 | Firmware image and chip | JieLi pi32v2-family chip, exact part unknown. A community patcher decrypts firmware 2.20 and reflashes it over Bluetooth; only its author reports flashing a controller (see research). This unit ran 2.12 and now runs official 2.20 (confirmed over Bluetooth) |
-| Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (about 55 seconds over Bluetooth LE), then 2.20 with `patches/usb-xbox360-id.txt` and `patches/bt-xbox-type4.txt` |
+| Changes to the controller | Official GameSir firmware 2.20 flashed from a Mac with `tools/flash.sh` (about 55 seconds over Bluetooth LE), then 2.20 with `patches/usb-xbox360-id.txt`, `patches/bt-xbox-type4.txt` and `patches/bt-xbox-id-one-s.txt` |
 
 ## Wired modes as Apple's GameController framework sees them
 
@@ -54,7 +54,7 @@ Not yet checked: Windows (where the ID change makes Windows use its own Xbox 360
 
 ## Bluetooth Xbox mode
 
-Firmware 2.20 contains classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` points Home + Y (stock: Switch) at type 4, makes it claim the product ID that matches the reports it sends (045e:02e0), gives it a green light, gives it a Bluetooth address of its own, and gives it the same connect timeout as the DualShock 4 mode. Measured on macOS 27.2 with firmware 2.20 plus both patches:
+Firmware 2.20 contains classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` with `patches/bt-xbox-id-one-s.txt` points Home + Y (stock: Switch) at type 4, makes it claim the product ID that matches the reports it sends (045e:02e0), gives it a green light, gives it a Bluetooth address of its own, and gives it the same connect timeout as the DualShock 4 mode. Measured on macOS 27.2 with firmware 2.20 plus both patches:
 
 | Item | Result |
 |---|---|
@@ -75,6 +75,20 @@ Pair it from the host's Bluetooth settings. Pairing with `blueutil --pair` makes
 
 On an iPhone (iOS 27) it pairs from Bluetooth settings and shows as an Xbox controller. Not yet tried in a game there. No gyro: the Xbox profile has none.
 
+## Patches waiting for a hardware test
+
+These are built and checked by disassembling every changed instruction, but not yet flashed:
+
+| Patch | What it changes | Expected effect |
+|---|---|---|
+| `patches/stick-smoothing-off.txt` | Turns off the two stick filters (the first is shared by every mode and comes from jun182/controller-mod-tool; the second is the Xbox report builder's own copy) | Sticks follow slow moves without the filters' delay, estimated at 20 to 30 ms each. Buttons and the report rate do not change. Risk: stick jitter at rest |
+| `patches/idle-power-off-52min.txt` | Connected-idle power-off limit from 13375 to 65536 counts of about 48 ms | Turns off after about 52 minutes idle instead of about 10 min 42 s (worked out from the code, not timed) |
+| `patches/bt-xbox-elite-paddles.txt` | Bluetooth Xbox mode claims the Xbox Elite Series 2 (045e:0b05) and sends its 39-byte report with the paddle byte filled from the raw paddle state | The rear paddles appear as paddle buttons 1 and 2 in Apple's framework. Both paddles must be unmapped ("null") in the GameSir app, or they also press the stick clicks |
+
+The Bluetooth input rate itself is set by the Mac: macOS puts game controllers on a 15 ms low-power schedule (seen in its Bluetooth log), which is where the 15 ms interval and about 62 reports per second come from.
+
+Build every patch with `third_party/controller-mod-tool/g8fw.py build <official 2.20 ota.bin> <out.bin> patches/usb-xbox360-id.txt patches/bt-xbox-type4.txt <ID file> [other patches]`, where the ID file is `patches/bt-xbox-id-one-s.txt` or `patches/bt-xbox-elite-paddles.txt`.
+
 ## Bluetooth, DualShock 4 mode (blue)
 
 Measured on macOS with `tools/controller-probe.swift`, `tools/ds4-extended-check.swift` and `tools/ds4-bt-interval-test.swift`.
@@ -87,7 +101,7 @@ Measured on macOS with `tools/controller-probe.swift`, `tools/ds4-extended-check
 | Report interval | One report every 15 ms (about 65 per second), with occasional 45 ms gaps. USB in the same mode: every 4 ms |
 | Host-requested interval | Ignored. Requesting 1, 4 or 8 ms in output report 0x11 (the DualShock 4 setting Linux uses) left the interval at 15 ms |
 
-Not yet known: whether the 15 ms comes from the controller's firmware or from the Bluetooth link this Mac negotiates, and what an iPhone gets.
+The 15 ms comes from the Mac's low-power schedule for game controllers (see "Patches waiting for a hardware test"). Not yet known: what an iPhone gets.
 
 ## Bluetooth, Android mode (yellow)
 
