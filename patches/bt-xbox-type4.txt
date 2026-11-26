@@ -12,11 +12,13 @@
 # 0x1E14DA8 saved-pairing flag index 1172 (1169 + 3) -> 1173 (1169 + 4), so a saved Switch pairing
 # does not send the combo into reconnect instead of pairing.
 14daa:9504
-# Pairing-blink color table (one byte per type at file 0x12C6A + type - 1): type 4's entry skips the
-# LED call; point it at type 1's case so it blinks.
-12c6d:05
-# Steady-state LED table (tbh at 0x1E17AE8): type 4's case set no color; use type 1's case.
-17af0:0a00
+# Pairing-blink color table (tbb, one byte per type at file 0x12C6A + type - 1, target 0x1E12C6A + 2 * entry):
+# type 4's entry skips the LED call. Point it at type 9's case (0x1E12CE4), which blinks green.
+12c6d:3d
+# Steady-state LED table (tbh, halfword per type at 0x17AEA + 2 * (type - 1), target 0x1E17AEA + 2 * entry):
+# type 4's case (0x1E17C3C) sets no color. Point it at the solid-green block 0x1E17D4C (reached from the
+# wired-mode switch in type 1's case), which sets green and joins type 4's own tail at 0x1E17DD0.
+17af0:3101
 # Device ID: type 4 claims Microsoft 045e:02fd, but its report builder (0x1E1150C) sends the original
 # Xbox One S Bluetooth layout (10 buttons: A B X Y LB RB View Menu LS RS, Xbox button in report 2),
 # which is product 02e0. Apple maps buttons by product, so with 02fd, View and Menu arrive as LB/RB bits.
@@ -30,3 +32,8 @@
 # The timer starts once the HID channel is up. Point type 4 at type 1's case so it gets the same time.
 # Measured drops during pairing came from `blueutil --pair` disconnecting, not from this timer.
 df9d:09
+# Bluetooth address (machine B start-up, types 1 and 4, 0x1E0AFF4): the address byte at b[0x42E0+670] was
+# XORed with 0x0C for both types, so they shared one address and a host kept one pairing for both.
+# Replace `r1 ^= 0xC` with `r2 = b[r4+0]` (the type) and `r1 ^= r2`: type 1 XORs 1, type 4 XORs 4.
+# Other types use 0 (types 3, 8, 9), 0x30 (type 2) and 0xC0 (type 7), so all stay distinct.
+affa:4a402919

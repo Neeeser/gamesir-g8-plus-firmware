@@ -54,28 +54,26 @@ Not yet checked: Windows (where the ID change makes Windows use its own Xbox 360
 
 ## Bluetooth Xbox mode
 
-Firmware 2.20 contains classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` points Home + Y (stock: Switch) at type 4, makes it claim the product ID that matches the reports it sends (045e:02e0), gives it a light color, and gives it the same connect timeout as the DualShock 4 mode. Measured on macOS 27.2 with firmware 2.20 plus both patches:
+Firmware 2.20 contains classic-Bluetooth Xbox One S identities that no button combo selects (Bluetooth gamepad types 4 and 7). `patches/bt-xbox-type4.txt` points Home + Y (stock: Switch) at type 4, makes it claim the product ID that matches the reports it sends (045e:02e0), gives it a green light, gives it a Bluetooth address of its own, and gives it the same connect timeout as the DualShock 4 mode. Measured on macOS 27.2 with firmware 2.20 plus both patches:
 
 | Item | Result |
 |---|---|
-| Identity | Microsoft 045e:02e0 over classic Bluetooth |
+| Identity | Microsoft 045e:02e0 over classic Bluetooth, named "Xbox Wireless Controller" |
 | Apple framework category | Xbox One |
 | Glyphs | A/B/X/Y, LB/RB, LT/RT, Menu, View, Xbox button |
 | Button check (`tools/input-check.swift`) | Face buttons, bumpers, Menu, View, stick clicks and D-pad arrive under the right names. The rear paddles arrive as the stick clicks |
 | Analog triggers | Yes, 0 to 1.00 on both |
 | Sticks | Full range on both axes |
 | Reports per second | About 63 (16-byte report 0x01) |
-| Connection | Stayed connected; checked again after 60 seconds |
+| Connection | Stayed connected through the button check |
 
-To start it, turn the controller on and press Home + Y. A fast blue blink means it is waiting to pair; a slow blink means it is reconnecting to the last host it paired with.
+To start it, turn the controller on and press Home + Y. A fast green blink means it is waiting to pair; a slow green blink means it is reconnecting to the last host it paired with. Holding the small button under the USB port for 2 seconds switches a slow blink to pairing. Once connected the light stays green.
+
+Each Bluetooth mode has its own address, so a host keeps a separate pairing for each mode. The patch also changes the DualShock 4 mode's address (stock firmware gave it the same address as type 4), so a host that paired the DualShock 4 mode before this patch needs to pair it again.
 
 Pair it from the host's Bluetooth settings. Pairing with `blueutil --pair` makes macOS drop the link just as the controller opens its input channel, and the controller then turns itself off.
 
-Known gaps:
-
-- The mode shares the DualShock 4 mode's Bluetooth address, so a host keeps one pairing for both modes and shows the name it saw first. Pairing one mode replaces the other.
-- The light is the DualShock 4 mode's blue.
-- Not yet checked on iPhone. No gyro: the Xbox profile has none.
+Known gaps: not yet checked on iPhone, and no gyro, since the Xbox profile has none.
 
 ## Bluetooth, DualShock 4 mode (blue)
 
