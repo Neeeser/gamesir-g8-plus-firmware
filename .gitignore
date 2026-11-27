@@ -8,3 +8,9 @@ firmware/
 third_party/
 research/src/
 .DS_Store
+# Machine and account settings
+config.local.sh
+# App build output and generated project
+app/build/
+app/G8Companion.xcodeproj/
+app/screenshots/

@@ -1,0 +1,58 @@
+# Build with app/scripts/build.sh, which reads TEAM_ID and BUNDLE_PREFIX from config.local.sh.
+name: G8Companion
+options:
+  bundleIdPrefix: ${BUNDLE_PREFIX}
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: ${TEAM_ID}
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  G8Companion:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources: [G8Companion]
+    info:
+      path: G8Companion/Info.plist
+      properties:
+        CFBundleDisplayName: G8 Companion
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight, UIInterfaceOrientationPortraitUpsideDown]
+        # Lets the app draw at 120 Hz on ProMotion screens, which halves the frame wait in the button-to-screen test.
+        CADisableMinimumFrameDurationOnPhone: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        GCSupportsControllerUserInteraction: true
+        GCSupportedGameControllers:
+          - ProfileName: ExtendedGamepad
+          - ProfileName: DirectionalGamepad
+        NSBluetoothAlwaysUsageDescription: Connects to the controller to update its firmware.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.g8companion
+        PRODUCT_NAME: G8 Companion
+        ENABLE_HARDENED_RUNTIME: YES
+        SUPPORTS_MACCATALYST: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+  G8CompanionTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    # The model code has no UI, so the tests compile it directly instead of loading the app.
+    sources: [G8CompanionTests, G8Companion/Model]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.g8companion.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  G8Companion:
+    build:
+      targets:
+        G8Companion: all
+        G8CompanionTests: [test]
+    test:
+      targets: [G8CompanionTests]

@@ -118,6 +118,8 @@ Read with `tools/ble-inspect.swift` (read-only; built as an app by `tools/build-
 
 ## Tools
 
+`app/` holds G8 Companion, an iPhone and Mac app that tests the controller as games see it (every input, stick noise and return time, update timing, idle power-off) and saves results as JSON logs. See `app/README.md`.
+
 The tools run on macOS with the Xcode command line tools. Bluetooth scans use `blueutil` from Homebrew.
 
 
