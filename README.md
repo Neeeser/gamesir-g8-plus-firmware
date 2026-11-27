@@ -82,9 +82,10 @@ These are built and checked by disassembling every changed instruction, but not 
 | Patch | What it changes | Expected effect |
 |---|---|---|
 | `patches/stick-smoothing-off.txt` | Turns off the two stick filters (the first is shared by every mode and comes from jun182/controller-mod-tool; the second is the Xbox report builder's own copy) | Sticks follow slow moves without the filters' delay, estimated at 20 to 30 ms each. Buttons and the report rate do not change. Risk: stick jitter at rest |
-| `patches/idle-power-off-52min.txt` | Connected-idle power-off limit from 13375 to 65536 counts of about 48 ms | Turns off after about 52 minutes idle instead of about 10 min 42 s (worked out from the code, not timed) |
 | `patches/bt-xbox-elite-paddles.txt` | Bluetooth Xbox mode claims the Xbox Elite Series 2 (045e:0b05) and sends its 39-byte report with the paddle byte filled from the raw paddle state | The rear paddles appear as paddle buttons 1 and 2 in Apple's framework |
 | `patches/bt-xbox-paddles-no-stick-click.txt` | Used with the paddle patch: while a paddle is held, clears the stick click the stock mapping copies it to | The paddles work without unmapping them in the GameSir app. A real stick click on the same side is also dropped while that paddle is held |
+
+Optional, left out of the builds above: `patches/idle-power-off-52min.txt` raises the connected-idle power-off limit from 13375 to 65536 counts of about 48 ms, so the controller turns off after about 52 minutes with no input instead of the stock 10 min 42 s (both worked out from the code, not timed). The timer resets on any button press or stick or trigger movement, so it does not fire during normal play. Other times fit in the same instruction: up to 26 min 12 s in 48 ms steps, or about 26-minute multiples above that (section 4 of the power-off notes lists the encodings).
 
 The Bluetooth input rate itself is set by the Mac: macOS puts game controllers on a 15 ms low-power schedule (seen in its Bluetooth log), which is where the 15 ms interval and about 62 reports per second come from.
 
